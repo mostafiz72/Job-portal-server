@@ -55,6 +55,21 @@ async function run() {
       const email =  req.query.email;      //// kono ekta unique email khujbo bole query use kora hoyse
       const query = { applicant_email: email };   /// applicant email er sate jodi amader pathano email match kore tahole amra sei ta query er mordhe set kortesi
       const result = await jobApplicationCollection.find(query).toArray();
+
+      /// ami amar data and ami kon jaigai apply korsi seita thke kicu data nibo  and ekta array te convert korbo
+
+      for(const application of result){  // result er mordhe joto data ase sob ek ek kore application er mordhe rekhe ditesi
+        console.log(application.job_id);  /// ekta ekta kore koto job_id ase seita print koretesi
+        const query1 = { _id: new ObjectId(application.job_id)}
+        const job = await jobsCollection.findOne(query1);
+        if(job){
+          application.title = job.title;  // nutun valu add kortesi
+          application.company = job.company;
+          application.company_logo = job.company_logo;
+          application.location = job.location;
+        }
+      }
+
       res.send(result);
     })
 
@@ -64,7 +79,15 @@ async function run() {
         const application = req.body;
         const result = await jobApplicationCollection.insertOne(application);
         res.send(result);
-         
+    })
+
+
+    // delete job application functionality starting ***************************
+
+    app.delete("/delete-application/:id", async(req, res)=>{
+        const id = req.params.id;
+        const result = await jobApplicationCollection.deleteOne({_id: new ObjectId(id)});
+        res.send(result);
     })
   
     // Send a ping to confirm a successful connection
