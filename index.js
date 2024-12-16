@@ -90,6 +90,28 @@ async function run() {
     app.post("/apply", async(req, res)=>{
         const application = req.body;
         const result = await jobApplicationCollection.insertOne(application);
+
+        /// amra ekhon amader job a koyjon aply korse sei count ta dekhte chitesi &&&& amara muloto kon job a apply kortesi and koyjon apply korsi seitar ekta count kortesi
+
+        const id = application.job_id;   //// application er mordhe theke amra job-id ta niye id variable er mordhe rekhe dilam
+        const query = { _id: new ObjectId(id)}  //// data base er mordhe amra id deye search korebo
+        const job = await jobsCollection.findOne(query);
+        let count = 0;
+        if(job.applicationCount){
+          count = job.applicationCount + 1;
+        }
+        else{
+          count = 1;
+        }
+
+        //// now updata the job info 
+        const filter = {  _id: new ObjectId(id) };
+        const updatedDoc = {
+          $set: { applicationCount: count }  /// jobsCollection er mordhe application count name ekta porperty set kore dilam jar value hobe count
+        }
+
+        const updatedResult = await jobsCollection.updateOne(filter, updatedDoc);
+
         res.send(result);
     })
 
