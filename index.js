@@ -36,7 +36,12 @@ async function run() {
     //// get the all data *********************
 
     app.get("/jobs", async(req, res)=>{
-      const result = await jobsCollection.find().toArray();
+      const email = req.query.email;
+      let query = {};  /// faka ekta query set korlam &&&&&& amara variable ta onno jaigei use korbo bole let use korsi
+      if(email){
+         query = { hr_Email: email };  /// amader data base a j applicant_email ase tar sate amader email ta k match kortesi
+      }
+      const result = await jobsCollection.find(query).toArray();   //// amra data base theke query deye data search kortesi jodi email thake taile sei email onusare amader data dibe na hole amader oi khane faka query thakbe R faka thakle amader alll data dibe.
       res.send(result);
     })
 
@@ -45,6 +50,13 @@ async function run() {
     app.get("/jobs/:id", async(req, res)=>{
       const id = req.params.id;
       const result = await jobsCollection.findOne({_id: new ObjectId(id)});
+      res.send(result);
+    })
+
+    /// post the new data inside the jobs database ************
+    app.post('/jobs', async(req, res)=>{
+      const newJob = req.body;
+      const result = await jobsCollection.insertOne(newJob);
       res.send(result);
     })
 
