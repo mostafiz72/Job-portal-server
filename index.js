@@ -132,6 +132,21 @@ async function run() {
         const result = await jobApplicationCollection.deleteOne({_id: new ObjectId(id)});
         res.send(result);
     })
+
+    // Winers user added the database --------------------------
+
+    app.patch("/apply/:id", async(req, res)=>{
+      const id = req.params.id;  /// j id te click korsi sei id ta pailam
+      const data = req.body;   /// font end theke ja kicu asbe ta sob data er mordhe rakhe dibo
+      const filter = { _id: new ObjectId(id)};  /// jeita match korse sei data ta amra filter er mordhe rekhe dibo
+      const updatedDoc = {
+        $set: {
+          status: data.status  //// data base er mdrdhe status name property set hobe and tar value hobe data.status er mordh ja asbe tai
+        }
+      }
+      const results = await jobApplicationCollection.updateOne(filter, updatedDoc);
+      res.send(results);
+    })
   
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
