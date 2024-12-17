@@ -71,7 +71,7 @@ async function run() {
       /// ami amar data and ami kon jaigai apply korsi seita thke kicu data nibo  and ekta array te convert korbo
 
       for(const application of result){  // result er mordhe joto data ase sob ek ek kore application er mordhe rekhe ditesi
-        console.log(application.job_id);  /// ekta ekta kore koto job_id ase seita print koretesi
+        // console.log(application.job_id);  /// ekta ekta kore koto job_id ase seita print koretesi
         const query1 = { _id: new ObjectId(application.job_id)}
         const job = await jobsCollection.findOne(query1);
         if(job){
@@ -83,6 +83,15 @@ async function run() {
       }
 
       res.send(result);
+    })
+
+    // view applications user *************************************
+
+    app.get('/apply/jobs/:job_id', async(req, res)=>{
+        const jobId =  req.params.job_id;  // Amra jokhon URL er mardhome kono data khujbo tokhon amra [---params ----] use korbo. and amara jokhon kono data er thek kono data alada korbo tokhon amar query use korbo <<<<<< example:- Filtering, searching, sorting...... er somoy query use korbo.
+        const query = { job_id: jobId };   /// job_id er sate jodi amader pathano job_id match kore tahole amra sei ta query er mordhe set kortesi
+        const result = await jobApplicationCollection.find(query).toArray();
+        res.send(result);
     })
 
     /// post the applly data on in the server ************
