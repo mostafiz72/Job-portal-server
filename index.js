@@ -1,12 +1,44 @@
 require('dotenv').config()
 const cors = require('cors');  // middleware to handle CORS requests
 const express = require('express');
+const jwt = require('jsonwebtoken');
+const cookieParser =  require('cookie-parser');
 const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware to handle CORS requests and json files configurations.
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173'],  //// amader ai server theke jwt asbe &&&&& ai site thke request ta asbe
+  credentials: true,   /// ata amader sate communication er permition dibo /// cookie tuki ja kicu dibe sei gula ami appept korbo
+}));
 app.use(express.json());
+app.use(cookieParser());
+
+/// why to use loger----------
+// amara jodi kono jaigai dhoka and kono api call korar somoy onno kono api k call korte chai taile logger use kora hoy. Example: VeryFiy korar somoy
+const logger = (req, res, next) => {  /// amara j khane loger use korbo sei khane loger call hobe &&& amader age loger er kaj korbe then next() er merdhome abar jei jaigei logger use kora hoyse seita call hobe
+  console.log('inside the logger data');
+  next(); /// next use kora hoy jano ai kaj ta ses hoytar por abar tar por j kaj ta korte chai sei ta jno call hoy
+  
+}
+
+// R ekta middleWare use kora holo --------------- Ai middle ware er mordhe amar ja ischa tai accesskorte pari------------------------------------------------------------------
+const verifyToken = (req, res, next) => { 
+  console.log("inside the verify token middleware data", req.cookies);
+  const token = req?.cookies?.token;
+  if (!token) {  // token jodi na thake taile amra take jaite dibo na tare amara error message diye dibo
+    return res.status(401).send({ message: 'No token provided.' }); /// amader jodi token na thake taile amra ai error ta show koraibo
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) =>{ /// encoded mane == token k hijibi kore rakha R decoded mane == hijibiji token k solid kore rakha
+     if(err){
+      return res.status(401).send({message: "UnAuthorized access"})
+     }
+     req.user = decoded;
+     next();
+  })
+  
+}
 
 app.get("/", (req, res)=>{
     res.send("hello world!");
@@ -29,13 +61,28 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
+    //// Auth releted APIService------------------
+    //// Jsob Web token Strting points here -------------------
+
+    app.post('/jwt', async(req, res)=>{
+      const user = req.body;   /// ai api er mordhe ja kicu pathabo tai pabo
+      const token = jwt.sign(user, process.env.JWT_SECRET, {expiresIn: "1h"}) //// ata jsob web token theke nauya hoyse /// and token create kora hoyse ai line er mardhome
+      res.cookie('token', token, {   /// cookie te save korar jonno res.cookie use kora hoyse tar proterty name  token and value j token ashe seita 
+        httpOnly: true,   /// only http use kora jabe sei kotha bola hoyse 
+        secure: false   //// secure nai sei ta bola hoyse
+      })
+      .send({success: true});
+    })
+
     // jobs related apis 
     const jobsCollection = client.db("jobPortal").collection("jobs");
     const jobApplicationCollection = client.db("jobPortal").collection("applications");
 
     //// get the all data *********************
 
-    app.get("/jobs", async(req, res)=>{
+    app.get("/jobs", logger, async(req, res)=>{
+      console.log("now inside the logger api call back");
+      
       const email = req.query.email;
       let query = {};  /// faka ekta query set korlam &&&&&& amara variable ta onno jaigei use korbo bole let use korsi
       if(email){
@@ -63,9 +110,12 @@ async function run() {
     
     /// user already applied data showing the email  address in database**********************
 
-    app.get("/apply", async(req, res)=>{
+    app.get("/apply", verifyToken, async(req, res)=>{
       const email =  req.query.email;      //// kono ekta unique email khujbo bole query use kora hoyse
       const query = { applicant_email: email };   /// applicant email er sate jodi amader pathano email match kore tahole amra sei ta query er mordhe set kortesi
+      if(req.user.email !== req.query.email){
+        return res.status(401).send({message: 'Unauthorized access'});  // amader jodi amader email match na kore tahole amra ai error ta show koraibo
+      }
       const result = await jobApplicationCollection.find(query).toArray();
 
       /// ami amar data and ami kon jaigai apply korsi seita thke kicu data nibo  and ekta array te convert korbo
